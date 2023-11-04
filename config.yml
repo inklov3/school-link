@@ -1,0 +1,7 @@
+#账号
+account: 7210764358
+#密码
+password: 063910
+#连接类型
+#校园网为""   移动为"@cmcc"  联通为"@unicom"  电信为"@telecom"
+connect: "@cmcc"
