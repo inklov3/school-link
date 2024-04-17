@@ -2,6 +2,7 @@ import logging
 import os
 import socket
 import sys
+from subprocess import Popen, PIPE
 
 import yaml
 import requests
@@ -14,6 +15,8 @@ def getConfigLocation():
         return os.path.join(os.path.dirname(sys.executable), 'config.yml')  # 获取打包后的目录
     else:
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.yml')
+
+
 def getEffectiveIp():
     interfaces = socket.getaddrinfo(socket.gethostname(), None)
     for interface in interfaces:
@@ -22,6 +25,20 @@ def getEffectiveIp():
             if ip.startswith("10."):
                 return ip
     return ""
+
+
+def get_ip():
+    p = Popen("hostname -I", shell=True, stdout=PIPE)
+    data = p.stdout.read()  # 获取命令输出内容
+    data = str(data, encoding='UTF-8')  # 将输出内容编码成字符串
+    ip_list = data.split(' ')  # 用空格分隔输出内容得到包含所有IP的列表
+    if "\n" in ip_list:  # 发现有的系统版本输出结果最后会带一个换行符
+        ip_list.remove("\n")
+    ip = ""
+    for i in ip_list:
+        if i.startswith("10."):
+            ip = i
+    return ip
 
 
 # 关于config文件中读取的内容
@@ -33,7 +50,7 @@ class ConfigKey(Enum):
 
 class LinkTask:
     def initLogger(self):
-        logger = logging.getLogger("LinkLogger")
+        logger = logging.getLogger("school-link-log")
         # 创建一个formatter对象，指定日志的输出格式
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         # 创建一个handler对象，用来输出日志到文件，文件名为mylog.log，模式为追加
@@ -73,6 +90,7 @@ class LinkTask:
         self.__ip = getEffectiveIp()
         if self.__ip == "":
             self.__logger.info("未能检测到10开始的有效ip")
+            self.__ip = get_ip()
         self.__logger.info("connectIp: " + self.__ip)
 
     def wrapConnectRequest(self):
